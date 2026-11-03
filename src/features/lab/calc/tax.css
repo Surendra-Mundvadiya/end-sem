@@ -1,0 +1,299 @@
+/* New regime tax calculator (prefix lab-tax-, lab-stair-, lab-bill-). */
+
+.lab-tax-result {
+  display: grid;
+  gap: 16px;
+}
+
+.lab-tax-result__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+/* ---------- tax bill bar ---------- */
+
+.lab-bill {
+  display: grid;
+  gap: 10px;
+}
+
+.lab-bill__svg {
+  width: 100%;
+  height: 14px;
+}
+
+.lab-bill__track {
+  fill: var(--surface-3);
+}
+
+.lab-bill__pay {
+  fill: var(--unit, var(--brand));
+}
+
+.lab-bill__rebate {
+  fill: color-mix(in srgb, var(--ok) 62%, var(--surface));
+}
+
+.lab-bill__stats .lab-stat__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lab-bill__sw {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.lab-bill__sw--pay {
+  background: var(--unit, var(--brand));
+}
+
+.lab-bill__sw--rebate {
+  background: color-mix(in srgb, var(--ok) 62%, var(--surface));
+}
+
+.lab-bill__sw--slab {
+  border: 2px solid var(--ink-2);
+}
+
+/* ---------- staircase ---------- */
+
+.lab-stair {
+  touch-action: pan-y;
+  cursor: ew-resize;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.lab-stair__track {
+  fill: var(--surface-3);
+}
+
+.lab-stair__fill {
+  fill: color-mix(in srgb, var(--unit, var(--brand)) 34%, var(--surface));
+}
+
+.lab-stair__cap {
+  fill: var(--unit, var(--brand));
+}
+
+.lab-stair__slab.is-hot .lab-stair__track {
+  fill: color-mix(in srgb, var(--unit, var(--brand)) 10%, var(--surface-3));
+}
+
+.lab-stair__slab.is-hot .lab-stair__fill {
+  fill: color-mix(in srgb, var(--unit, var(--brand)) 48%, var(--surface));
+}
+
+.lab-stair__rate {
+  fill: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.lab-stair__slab.is-on .lab-stair__rate {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+.lab-stair__tick {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-stair__base {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.lab-stair__rebate-line {
+  stroke: var(--ok);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.lab-stair__relief {
+  fill: color-mix(in srgb, var(--ok) 20%, transparent);
+}
+
+.lab-stair__marker {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.lab-stair__dot {
+  fill: var(--ink);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.lab-stair__bubble rect {
+  fill: var(--ink);
+}
+
+.lab-stair__bubble text {
+  fill: var(--bg);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-stair__more {
+  fill: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lab-stair-legend .lab-legend__sw--fill {
+  background: color-mix(in srgb, var(--unit, var(--brand)) 34%, var(--surface));
+  box-shadow: inset 0 2px 0 var(--unit, var(--brand));
+}
+
+.lab-stair-legend .lab-legend__sw--relief {
+  background: color-mix(in srgb, var(--ok) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent);
+}
+
+.lab-stair-legend .lab-legend__line {
+  border-top-color: var(--ok);
+}
+
+.lab-tax-paylabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.lab-chart-block {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.lab-tax-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.lab-tax-hint svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+/* ---------- slab table ---------- */
+
+.lab-tax-table__range {
+  display: block;
+  color: inherit;
+  font-weight: 600;
+}
+
+.lab-tax-table__range .lab-tax-table__short {
+  display: none;
+}
+
+.lab-tax-table__rate {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  color: var(--ink-2);
+  font: 700 0.72rem/1.3 var(--font-ui);
+}
+
+tr.is-on .lab-tax-table__rate {
+  background: var(--unit, var(--brand));
+  color: var(--brand-ink);
+}
+
+.lab-tax-table__bar {
+  display: block;
+  height: 4px;
+  margin-top: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.lab-tax-table__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--unit, var(--brand));
+  transform-origin: left center;
+}
+
+.lab-tax-table tbody tr {
+  cursor: default;
+}
+
+@container lab-panel (max-width: 380px) {
+  .lab-tax-table__range .lab-tax-table__long {
+    display: none;
+  }
+
+  .lab-tax-table__range .lab-tax-table__short {
+    display: inline;
+  }
+}
+
+/* ---------- memory hooks ---------- */
+
+.lab-hooks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+}
+
+.lab-hook {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.lab-hook__title {
+  color: var(--ink);
+  font: 650 1rem/1.3 var(--font-display);
+}
+
+.lab-hook__text {
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.lab-hook__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.lab-hook__tag {
+  color: var(--muted);
+  font: 700 0.68rem/1 var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

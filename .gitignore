@@ -2,3 +2,9 @@
 .AppleDouble
 .LSOverride
 ._*
+
+node_modules/
+dist/
+*.local
+*.tsbuildinfo
+.vite/
