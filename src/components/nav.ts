@@ -1,5 +1,5 @@
 import { BookOpen, FlaskConical, Headphones, House, Layers, Library, ListChecks, Scale, Zap, type LucideIcon } from 'lucide-react'
-import { CASES, SUBJECT } from '../data'
+import { CASES, HAS_QUIZ, SUBJECT } from '../data'
 
 export interface NavItem {
   to: string
@@ -18,11 +18,13 @@ const ALL_ITEMS: NavItem[] = [
   { to: '/lab', label: 'Memory Lab', hint: 'Visual tools and mnemonics', icon: FlaskConical, group: 'remember' },
   { to: '/cases', label: 'Cases', hint: 'Leading cases and a concept game', icon: Scale, group: 'remember' },
   { to: '/revise', label: 'Rapid revision', hint: 'One-page unit summaries', icon: Zap, group: 'remember' },
-  { to: '/reference', label: 'Reference', hint: 'Key figures, section finder, PDFs', icon: Library, group: 'remember' },
+  { to: '/reference', label: 'Reference', hint: 'Glossary, key facts and sources', icon: Library, group: 'remember' },
 ]
 
 /** The sections the current subject has content for. */
-export const NAV_ITEMS: NavItem[] = ALL_ITEMS.filter((n) => (n.to === '/lab' ? SUBJECT.hasLab : n.to === '/cases' ? CASES.length > 0 : true))
+export const NAV_ITEMS: NavItem[] = ALL_ITEMS.filter((n) =>
+  n.to === '/lab' ? SUBJECT.hasLab : n.to === '/cases' ? CASES.length > 0 : n.to === '/quiz' ? HAS_QUIZ : true,
+)
 
 export function isNavActive(pathname: string, to: string): boolean {
   return to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(`${to}/`)

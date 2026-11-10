@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, type KeyboardEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeftRight, BookMarked, BookOpen, Download, ExternalLink, FileText, Hash, Info, Scale, type LucideIcon } from 'lucide-react'
+import { ArrowLeftRight, BookMarked, BookOpen, Download, ExternalLink, FileText, Hash, Info, Library, Scale, type LucideIcon } from 'lucide-react'
 import PageHeader from '../../components/PageHeader'
-import { ABOUT_HTML, MATERIALS } from '../../data'
+import { MATERIALS } from '../../data'
 import { easeOut, spring, stagger, fadeUp } from '../../lib/motion'
-import { figureCards, hasFinder, hasKeyFigures } from './content'
+import { ABOUT, figureCards, hasAbout, hasFinder, hasGlossary, hasKeyFigures } from './content'
 import FiguresPanel from './FiguresPanel'
 import FinderPanel from './FinderPanel'
+import GlossaryPanel from './GlossaryPanel'
 import './reference.css'
 
-type TabId = 'figures' | 'finder' | 'materials' | 'about'
+/* Tab ids stay stable ("figures" is the key-facts tab) so existing ?tab= links keep working. */
+type TabId = 'glossary' | 'figures' | 'finder' | 'materials' | 'about'
 
 interface TabDef {
   id: TabId
@@ -20,14 +22,16 @@ interface TabDef {
 }
 
 const ALL_TABS: TabDef[] = [
-  { id: 'figures', label: 'Key figures', short: 'Figures', icon: Hash },
+  { id: 'glossary', label: 'Glossary', short: 'Glossary', icon: Library },
+  { id: 'figures', label: 'Key facts', short: 'Facts', icon: Hash },
   { id: 'finder', label: 'Section finder', short: 'Finder', icon: ArrowLeftRight },
   { id: 'materials', label: 'Materials', short: 'Materials', icon: FileText },
   { id: 'about', label: 'About', short: 'About', icon: Info },
 ]
 
 const TAB_PHRASE: Record<TabId, string> = {
-  figures: 'key figures and thresholds',
+  glossary: 'every term and its meaning',
+  figures: 'the key facts and numbers',
   finder: 'where each section now sits',
   materials: 'the source PDFs',
   about: 'how to read the references',
@@ -42,10 +46,11 @@ function subtitleFor(tabs: TabDef[]): string {
 /** Tabs whose content exists for the loaded subject; empty ones are left out entirely. */
 function availableTabs(): TabDef[] {
   const has: Record<TabId, boolean> = {
+    glossary: hasGlossary(),
     figures: hasKeyFigures() || figureCards().length > 0,
     finder: hasFinder(),
     materials: MATERIALS.length > 0,
-    about: ABOUT_HTML.trim() !== '',
+    about: hasAbout(),
   }
   return ALL_TABS.filter((t) => has[t.id])
 }
@@ -135,7 +140,7 @@ function MaterialsPanel() {
 function AboutPanel() {
   return (
     <motion.div className="ref-about card card-pad" variants={fadeUp} initial="hidden" animate="show">
-      <div className="notes" dangerouslySetInnerHTML={{ __html: ABOUT_HTML }} />
+      <div className="notes" dangerouslySetInnerHTML={{ __html: ABOUT }} />
     </motion.div>
   )
 }
@@ -192,6 +197,7 @@ export default function ReferencePage() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.26, ease: easeOut }}
             >
+              {active === 'glossary' && <GlossaryPanel initialQuery={initialQuery} />}
               {active === 'figures' && <FiguresPanel initialQuery={initialQuery} />}
               {active === 'finder' && <FinderPanel initialQuery={initialQuery} />}
               {active === 'materials' && <MaterialsPanel />}

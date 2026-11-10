@@ -33,7 +33,7 @@ export interface Unit {
 }
 
 export interface Slide {
-  /** "s0" … "s130" */
+  /** e.g. "s1-1-1" or "ch5-1" (older content: "s0" …) */
   id: string
   /** Position in SLIDES. */
   index: number
@@ -106,13 +106,16 @@ export interface Card {
 
 interface RawData {
   units: { id: string; short: string; name: string; hours?: number }[]
-  slides: { id: string; u: number; part: string; title: string; html: string; plain: string }[]
-  cases: { u: string; part: string; slide: number; name: string; h: string; plain: string }[]
+  slides: { id: string; u: number; part: string; title: string; html: string; plain: string; practice?: boolean }[]
+  /** `slide` is a slide id, or a SLIDES index in older content. */
+  cases: { u: string; part: string; slide: number | string; name: string; h: string; plain: string }[]
   quiz: { id?: string; u: string; q: string; ok: string; no: string[]; why: string; concept?: string; slide?: string }[]
   cards: { id: string; u: string; k: string; f: string; b: string }[]
   about: string
   appA: string
   appB: string
+  glossary?: { term: string; def: string; slide?: string }[]
+  lab?: Partial<Record<keyof LabData, (Record<string, unknown> & { unit?: string | null; slide?: string })[]>>
 }
 
 const data = (await SUBJECT.load()) as RawData
@@ -135,7 +138,7 @@ export const SLIDES: Slide[] = data.slides.map((s, index) => ({
   title: s.title,
   html: s.html,
   plain: s.plain,
-  isPractice: s.part.startsWith('Practice Questions'),
+  isPractice: s.practice ?? s.part.startsWith('Practice Questions'),
 }))
 
 const slideMap = new Map(SLIDES.map((s) => [s.id, s]))
@@ -151,7 +154,7 @@ export const CASES: CaseItem[] = data.cases.map((c, i) => ({
   id: `c${i}`,
   unitId: c.u as UnitId,
   part: c.part,
-  slideId: (SLIDES[c.slide] ?? SLIDES[0]).id,
+  slideId: typeof c.slide === 'string' ? (slideMap.has(c.slide) ? c.slide : SLIDES[0].id) : (SLIDES[c.slide] ?? SLIDES[0]).id,
   name: c.name,
   held: c.h,
   plain: c.plain,
@@ -183,7 +186,124 @@ export const SECTION_FINDER_HTML = data.appA
 /** Appendix B: key figures and thresholds (HTML, an ol.pts list with <strong> labels). */
 export const KEY_FIGURES_HTML = data.appB
 
+/** True when the subject has a question bank (the Quiz section and quiz links are hidden otherwise). */
+export const HAS_QUIZ = data.quiz.length > 0
+
+export interface GlossaryEntry {
+  term: string
+  /** Plain text or inline HTML. */
+  def: string
+  slideId?: string
+}
+
+/** Terms and definitions, alphabetical. */
+export const GLOSSARY: GlossaryEntry[] = (data.glossary ?? [])
+  .map((g) => ({ term: g.term, def: g.def, slideId: g.slide && slideMap.has(g.slide) ? g.slide : undefined }))
+  .sort((a, b) => a.term.localeCompare(b.term))
+
+/* ---------- Memory Lab data (generic, per subject) ---------- */
+
+interface LabBase {
+  id: string
+  title: string
+  /** Unit the tool belongs to; null for whole-subject tools. */
+  unitId: UnitId | null
+  /** Slide that teaches it. */
+  slideId?: string
+  intro?: string
+}
+
+/** A comparison matrix: rows of things compared across columns. columns[0] heads the row labels. */
+export interface CompareTool extends LabBase {
+  columns: string[]
+  rows: { label: string; cells: string[] }[]
+}
+
+/** Sort examples into buckets. */
+export interface SortTool extends LabBase {
+  prompt?: string
+  buckets: { id: string; label: string; hint?: string }[]
+  items: { text: string; bucket: string; why: string }[]
+}
+
+export interface TimelineTool extends LabBase {
+  /** sort is a number used for ordering (e.g. the year). */
+  events: { date: string; sort: number; title: string; detail?: string }[]
+}
+
+export interface MnemonicTool extends LabBase {
+  hook: string
+  items: { key: string; text: string }[]
+  note?: string
+}
+
+export interface FormulaVar {
+  name: string
+  label: string
+  /** Default value (from the notes' worked example where there is one). */
+  value: number
+  unit?: string
+  min?: number
+  max?: number
+  step?: number
+}
+
+/** A calculator: `expr` uses the variables, + - * / ^, parentheses and min/max/abs/round/sqrt/ln/exp (see lib/formula.ts). */
+export interface FormulaTool extends LabBase {
+  expr: string
+  vars: FormulaVar[]
+  result: { label: string; unit?: string; decimals?: number }
+  meaning: string
+  /** The notes' own worked example; the result must reproduce `expected`. */
+  example?: { vars: Record<string, number>; expected: number; note?: string }
+}
+
+export interface FlowNode {
+  /** A question node has q + options; a leaf has result. */
+  q?: string
+  options?: { label: string; next: string }[]
+  result?: string
+  detail?: string
+  tone?: 'good' | 'bad' | 'neutral'
+}
+
+/** A decision tree. */
+export interface FlowTool extends LabBase {
+  start: string
+  nodes: Record<string, FlowNode>
+}
+
+export interface LabData {
+  compare: CompareTool[]
+  sort: SortTool[]
+  timeline: TimelineTool[]
+  mnemonics: MnemonicTool[]
+  formulas: FormulaTool[]
+  flows: FlowTool[]
+}
+
+function labItems<T>(key: keyof LabData): T[] {
+  return (data.lab?.[key] ?? []).map((raw) => {
+    const { unit, slide, ...rest } = raw
+    return {
+      ...rest,
+      unitId: unit && unitMap.has(unit as UnitId) ? (unit as UnitId) : null,
+      slideId: slide && slideMap.has(slide) ? slide : undefined,
+    } as T
+  })
+}
+
 const unitMap = new Map(UNITS.map((u) => [u.id, u]))
+
+/** The subject's Memory Lab tools, from its content.json. */
+export const LAB: LabData = {
+  compare: labItems<CompareTool>('compare'),
+  sort: labItems<SortTool>('sort'),
+  timeline: labItems<TimelineTool>('timeline'),
+  mnemonics: labItems<MnemonicTool>('mnemonics'),
+  formulas: labItems<FormulaTool>('formulas'),
+  flows: labItems<FlowTool>('flows'),
+}
 
 export function getUnit(id: UnitId): Unit {
   return unitMap.get(id) ?? UNITS[0]

@@ -12,7 +12,7 @@ import CommandPalette from './CommandPalette'
 import { NAV_ITEMS, isNavActive, type NavItem } from './nav'
 import './AppShell.css'
 
-const TAB_ITEMS = NAV_ITEMS.filter((n) => ['/', '/learn', '/tutor', '/quiz'].includes(n.to))
+const TAB_ITEMS = NAV_ITEMS.filter((n) => ['/', '/learn', '/tutor', NAV_ITEMS.some((x) => x.to === '/quiz') ? '/quiz' : '/flashcards'].includes(n.to))
 const MORE_ITEMS = NAV_ITEMS.filter((n) => !TAB_ITEMS.includes(n))
 
 function Brand() {

@@ -1,4 +1,4 @@
-import { ABOUT_HTML, CARDS, KEY_FIGURES_HTML, SECTION_FINDER_HTML, UNITS, type UnitId } from '../../data'
+import { ABOUT_HTML, CARDS, GLOSSARY, KEY_FIGURES_HTML, SECTION_FINDER_HTML, UNITS, type UnitId } from '../../data'
 import { parseFinder, refLabel, splitFacts, type FinderGroup } from './parse'
 import { haystack, type Haystack } from './search'
 
@@ -6,6 +6,28 @@ import { haystack, type Haystack } from './search'
  * Nothing here names a subject: labels, examples and suggestions are all derived from the
  * loaded content, so the same views work for any subject (and hide what it does not have).
  */
+
+/**
+ * The appendix fields arrive as an HTML string, as an array of "<li>…</li>" strings (the content
+ * spec's form for key facts), or not at all. Every view reads them through these normalised values.
+ */
+function asHtml(value: unknown): string {
+  const wrap = (items: string[]) => `<ol class="pts">${items.map((i) => (/^\s*<li[\s>]/i.test(i) ? i : `<li>${i}</li>`)).join('')}</ol>`
+  if (typeof value === 'string') {
+    // Bare list items with no list around them.
+    return /^\s*<li[\s>]/i.test(value) && !/<[ou]l[\s>]/i.test(value) ? `<ol class="pts">${value}</ol>` : value
+  }
+  if (Array.isArray(value)) {
+    const items = value.filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+    return items.length ? wrap(items) : ''
+  }
+  return ''
+}
+
+/** "How to read the references" notes (HTML), or ''. */
+export const ABOUT = asHtml(ABOUT_HTML as unknown)
+const FINDER_SOURCE = asHtml(SECTION_FINDER_HTML as unknown)
+const KEY_FACTS_SOURCE = asHtml(KEY_FIGURES_HTML as unknown)
 
 /* DOM-based extraction of the appendices, parsed once and cached for the session. */
 
@@ -34,7 +56,7 @@ let tilesCache: FigureTile[] | null = null
 export function keyFigureTiles(): FigureTile[] {
   if (tilesCache) return tilesCache
   const tiles: FigureTile[] = []
-  const doc = parseHtml(KEY_FIGURES_HTML)
+  const doc = parseHtml(KEY_FACTS_SOURCE)
   doc.querySelectorAll('ol.pts > li').forEach((li) => {
     let label = ''
     let value = ''
@@ -101,7 +123,7 @@ let finderCache: Finder | null = null
 
 export function sectionFinder(): Finder {
   if (finderCache) return finderCache
-  const doc = parseHtml(SECTION_FINDER_HTML)
+  const doc = parseHtml(FINDER_SOURCE)
   const intro = (doc.querySelector('p')?.textContent ?? '').trim()
   const items = [...doc.querySelectorAll('ol.pts > li')].map((li) => li.textContent ?? '')
   const groups = parseFinder(items)
@@ -116,7 +138,7 @@ export function sectionFinder(): Finder {
  * they define them (e.g. “1961 Act” means …, (“the 2025 Act”)); otherwise generic.
  */
 export function actLabels(): { old: string; new: string } {
-  const text = htmlToText(ABOUT_HTML)
+  const text = htmlToText(ABOUT)
   const oldYear = /[“"](\d{4}) Act[”"] means/.exec(text)?.[1]
   const newYear = /[“"]the (\d{4}) Act[”"]/.exec(text)?.[1]
   return oldYear && newYear && oldYear !== newYear ? { old: `${oldYear} Act`, new: `${newYear} Act` } : { old: 'Old Act', new: 'New Act' }
@@ -144,9 +166,66 @@ export function figureSuggestions(): string[] {
 }
 
 export function hasKeyFigures(): boolean {
-  return KEY_FIGURES_HTML.trim() !== '' && keyFigureTiles().length > 0
+  return KEY_FACTS_SOURCE.trim() !== '' && keyFigureTiles().length > 0
 }
 
+/** The section finder exists only for subjects whose content has one (it is empty otherwise). */
 export function hasFinder(): boolean {
-  return SECTION_FINDER_HTML.trim() !== '' && sectionFinder().groups.length > 0
+  return FINDER_SOURCE.trim() !== '' && sectionFinder().groups.length > 0
+}
+
+export function hasAbout(): boolean {
+  return htmlToText(ABOUT) !== ''
+}
+
+/* ---------- glossary ---------- */
+
+export interface GlossaryRow {
+  id: string
+  term: string
+  /** Trusted inline HTML or plain text. */
+  def: string
+  /** Plain text of def, for search and for marking matches. */
+  defText: string
+  /** True when def carries markup (em, strong …) and is rendered as HTML. */
+  defIsHtml: boolean
+  slideId?: string
+  /** "A" … "Z", or "#" for terms that start with anything else. */
+  letter: string
+  hay: Haystack
+}
+
+let glossaryCache: GlossaryRow[] | null = null
+
+export function letterOf(term: string): string {
+  const c = term
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/^[^A-Za-z0-9]+/, '')
+    .charAt(0)
+    .toUpperCase()
+  return /[A-Z]/.test(c) ? c : '#'
+}
+
+/** GLOSSARY (already alphabetical), with search text and letter groups. */
+export function glossaryRows(): GlossaryRow[] {
+  if (glossaryCache) return glossaryCache
+  glossaryCache = GLOSSARY.filter((g) => g.term?.trim()).map((g, i) => {
+    const defText = htmlToText(g.def ?? '')
+    return {
+      id: `g${i}`,
+      term: g.term.trim(),
+      def: g.def ?? '',
+      defText,
+      defIsHtml: /<[a-z]/i.test(g.def ?? ''),
+      slideId: g.slideId,
+      letter: letterOf(g.term),
+      hay: haystack(g.term, defText),
+    }
+  })
+  return glossaryCache
+}
+
+export function hasGlossary(): boolean {
+  return glossaryRows().length > 0
 }

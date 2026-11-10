@@ -1,13 +1,37 @@
-import { useEffect } from 'react'
+import { useEffect, type ComponentType, type CSSProperties } from 'react'
 import { AnimatePresence, motion, type Variants } from 'framer-motion'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, BookOpen, FlaskConical, GraduationCap, MessageCircleQuestion } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, FlaskConical, ListOrdered } from 'lucide-react'
 import PageHeader from '../../components/PageHeader'
 import UnitPill from '../../components/UnitPill'
-import { getUnit, slideById, unitVars, type Slide } from '../../data'
+import {
+  SUBJECT,
+  UNITS,
+  getUnit,
+  slideById,
+  unitVars,
+  type FlowTool as FlowData,
+  type FormulaTool as FormulaData,
+  type TimelineTool as TimelineData,
+  type Unit,
+} from '../../data'
 import { easeOut, fadeUp, spring, stagger } from '../../lib/motion'
-import { LAB_TOOLS, toolById, type LabTool } from './tools'
+import { plural } from '../../lib/text'
+import { ALL_TOOLS, KIND_META, SUBJECT_TOOLS, UNIT_TOOLS, WHOLE_SUBJECT, canOrderTopics, entryById, type LabEntry } from './registry'
+import CompareTool from './tools/CompareTool'
+import CourseMap from './tools/CourseMap'
+import FlowToolImpl from './tools/FlowTool'
+import FormulaToolImpl from './tools/FormulaTool'
+import MnemonicTool from './tools/MnemonicTool'
+import SortTool from './tools/SortTool'
+import TimelineToolImpl from './tools/TimelineTool'
+import TopicOrder from './tools/TopicOrder'
 import './lab.css'
+
+// Written separately; typed here so they take the same { tool } props as the rest.
+const FormulaView: ComponentType<{ tool: FormulaData }> = FormulaToolImpl
+const TimelineView: ComponentType<{ tool: TimelineData }> = TimelineToolImpl
+const FlowView: ComponentType<{ tool: FlowData }> = FlowToolImpl
 
 const MotionLink = motion.create(Link)
 
@@ -25,36 +49,57 @@ const arrowVariants: Variants = {
   hover: { x: 4, transition: spring },
 }
 
-function toolStyle(tool: LabTool) {
-  return tool.unitId ? unitVars(tool.unitId) : undefined
+function toolStyle(e: LabEntry): CSSProperties | undefined {
+  return e.unitId ? unitVars(e.unitId) : undefined
 }
 
-function UnitLabel({ tool, withName = false }: { tool: LabTool; withName?: boolean }) {
-  if (tool.unitId) return <UnitPill unitId={tool.unitId} withName={withName} />
-  return <span className="unit-pill">All units</span>
+function ScopeLabel({ entry, withName = false }: { entry: LabEntry; withName?: boolean }) {
+  if (entry.unitId) return <UnitPill unitId={entry.unitId} withName={withName} />
+  return <span className="unit-pill lab-pill-subject">Whole subject</span>
+}
+
+function ToolBody({ entry }: { entry: LabEntry }) {
+  switch (entry.kind) {
+    case 'map':
+      return <CourseMap />
+    case 'order':
+      return <TopicOrder />
+    case 'compare':
+      return <CompareTool tool={entry.tool} />
+    case 'sort':
+      return <SortTool tool={entry.tool} />
+    case 'timeline':
+      return <TimelineView tool={entry.tool} />
+    case 'mnemonic':
+      return <MnemonicTool tool={entry.tool} />
+    case 'formula':
+      return <FormulaView tool={entry.tool} />
+    case 'flow':
+      return <FlowView tool={entry.tool} />
+  }
 }
 
 export default function LabPage() {
   const { toolId } = useParams()
-  const tool = toolById(toolId)
+  const entry = entryById(toolId)
 
   // The app animates between sections only, so moving between /lab and /lab/:toolId is animated here.
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
 
-  if (toolId && !tool) return <Navigate to="/lab" replace />
+  if (toolId && !entry) return <Navigate to="/lab" replace />
 
   return (
     <AnimatePresence mode="wait" initial={false} onExitComplete={() => window.scrollTo(0, 0)}>
       <motion.div
-        key={tool?.id ?? 'index'}
+        key={entry?.id ?? 'index'}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
         transition={{ duration: 0.28, ease: easeOut }}
       >
-        {tool ? <ToolFrame tool={tool} /> : <LabIndex />}
+        {entry ? <ToolFrame entry={entry} /> : <LabIndex />}
       </motion.div>
     </AnimatePresence>
   )
@@ -63,37 +108,43 @@ export default function LabPage() {
 /* ---------- /lab ---------- */
 
 function LabIndex() {
-  const calculators = LAB_TOOLS.filter((t) => t.kind === 'calculator')
-  const visuals = LAB_TOOLS.filter((t) => t.kind === 'visual')
+  const dataCount = ALL_TOOLS.length - WHOLE_SUBJECT.length
   return (
     <div className="page lab">
       <PageHeader
         eyebrow={
           <>
-            <FlaskConical size={14} aria-hidden="true" /> {LAB_TOOLS.length} interactive tools
+            <FlaskConical size={14} aria-hidden="true" /> {plural(ALL_TOOLS.length, 'interactive tool')}
           </>
         }
         title="Memory Lab"
-        subtitle="Interactive tools that make the hardest parts stick."
+        subtitle={`See ${SUBJECT.title} as one journey, put it back together in order, then drill each unit with ${dataCount > 0 ? 'matrices, sorting games, hooks and more' : 'the games below'}.`}
       />
-      <ToolSection
-        id="lab-calculators"
-        title="Work it out"
-        blurb="Calculators that apply the rules in your notes step by step, exam style."
-        tools={calculators}
-      />
-      <ToolSection
-        id="lab-visuals"
-        title="See it, remember it"
-        blurb="Visual memory aids for the topics that are easiest to mix up."
-        tools={visuals}
-        delay={0.12}
-      />
+
+      <ToolSection id="lab-whole" title="Whole subject" blurb="Start here: the syllabus in order, from the first unit to the last." tools={WHOLE_SUBJECT} />
+
+      {UNITS.map((u) => (
+        <UnitSection key={u.id} unit={u} tools={UNIT_TOOLS.get(u.id) ?? []} />
+      ))}
+
+      {SUBJECT_TOOLS.length > 0 && (
+        <ToolSection id="lab-across" title="Across the units" blurb="Tools that tie several units together." tools={SUBJECT_TOOLS} />
+      )}
     </div>
   )
 }
 
-function ToolSection({ id, title, blurb, tools, delay = 0 }: { id: string; title: string; blurb: string; tools: LabTool[]; delay?: number }) {
+function SectionGrid({ tools }: { tools: LabEntry[] }) {
+  return (
+    <motion.ul className="lab-grid" variants={stagger(0.06, 0.04)} initial="hidden" whileInView="show" viewport={{ once: true, margin: '0px 0px -40px 0px' }}>
+      {tools.map((t) => (
+        <ToolCard key={t.id} entry={t} />
+      ))}
+    </motion.ul>
+  )
+}
+
+function ToolSection({ id, title, blurb, tools }: { id: string; title: string; blurb: string; tools: LabEntry[] }) {
   return (
     <section className="lab-section" aria-labelledby={id}>
       <div className="lab-section__head">
@@ -102,23 +153,44 @@ function ToolSection({ id, title, blurb, tools, delay = 0 }: { id: string; title
         </h2>
         <p className="lab-section__blurb">{blurb}</p>
       </div>
-      <motion.ul className="lab-grid" variants={stagger(0.06, delay)} initial="hidden" animate="show">
-        {tools.map((t) => (
-          <ToolCard key={t.id} tool={t} />
-        ))}
-      </motion.ul>
+      <SectionGrid tools={tools} />
     </section>
   )
 }
 
-function ToolCard({ tool }: { tool: LabTool }) {
-  const Icon = tool.icon
+function UnitSection({ unit, tools }: { unit: Unit; tools: LabEntry[] }) {
+  const id = `lab-${unit.id}`
+  return (
+    <section className="lab-section lab-section--unit" aria-labelledby={id} style={unitVars(unit.id)}>
+      <div className="lab-section__head">
+        <span className="lab-section__badge" aria-hidden="true">
+          {unit.index + 1}
+        </span>
+        <div className="lab-section__text">
+          <div className="eyebrow lab-section__eyebrow">{unit.short}</div>
+          <h2 id={id} className="lab-section__title">
+            {unit.name}
+          </h2>
+        </div>
+        {canOrderTopics(unit.id) && (
+          <Link to={`/lab/topic-order?mode=topics&unit=${unit.id}`} className="chip lab-section__order">
+            <ListOrdered size={14} aria-hidden="true" /> Order its topics
+          </Link>
+        )}
+      </div>
+      {tools.length > 0 ? <SectionGrid tools={tools} /> : <p className="lab-section__none">No tools for this unit yet. The course map and the order game still cover it.</p>}
+    </section>
+  )
+}
+
+function ToolCard({ entry }: { entry: LabEntry }) {
+  const { icon: Icon, label } = KIND_META[entry.kind]
   return (
     <motion.li variants={fadeUp} className="lab-grid__item">
       <MotionLink
-        to={`/lab/${tool.id}`}
-        className="lab-card"
-        style={toolStyle(tool)}
+        to={`/lab/${entry.id}`}
+        className={`lab-card lab-card--${entry.kind}`}
+        style={toolStyle(entry)}
         variants={cardVariants}
         initial="rest"
         animate="rest"
@@ -131,12 +203,12 @@ function ToolCard({ tool }: { tool: LabTool }) {
           <motion.span className="lab-card__icon" variants={iconVariants} aria-hidden="true">
             <Icon size={22} />
           </motion.span>
-          <span className="lab-card__kind">{tool.kind === 'calculator' ? 'Calculator' : 'Visual'}</span>
+          <span className="lab-card__kind">{label}</span>
         </span>
-        <span className="lab-card__title">{tool.title}</span>
-        <span className="lab-card__hook">{tool.hook}</span>
+        <span className="lab-card__title">{entry.title}</span>
+        <span className="lab-card__hook">{entry.intro}</span>
         <span className="lab-card__foot">
-          <UnitLabel tool={tool} />
+          <span className="lab-card__meta">{entry.meta}</span>
           <span className="lab-card__go">
             Open
             <motion.span className="lab-card__arrow" variants={arrowVariants} aria-hidden="true">
@@ -151,95 +223,82 @@ function ToolCard({ tool }: { tool: LabTool }) {
 
 /* ---------- /lab/:toolId ---------- */
 
-function ToolFrame({ tool }: { tool: LabTool }) {
-  const Tool = tool.component
-  const slides = tool.sourceSlideIds.map((id) => slideById(id)).filter((s): s is Slide => !!s)
-  const unit = tool.unitId ? getUnit(tool.unitId) : null
-  const others = LAB_TOOLS.filter((t) => t.id !== tool.id)
+function ToolFrame({ entry }: { entry: LabEntry }) {
+  const slide = slideById(entry.slideId)
+  const at = ALL_TOOLS.findIndex((t) => t.id === entry.id)
+  const prev = at > 0 ? ALL_TOOLS[at - 1] : undefined
+  const next = at >= 0 && at < ALL_TOOLS.length - 1 ? ALL_TOOLS[at + 1] : undefined
+  const { label, icon: Icon } = KIND_META[entry.kind]
 
   return (
-    <div className="page lab">
+    <div className="page lab" style={toolStyle(entry)}>
       <Link to="/lab" className="lab-back">
         <ArrowLeft size={16} aria-hidden="true" /> Memory Lab
       </Link>
-      <PageHeader eyebrow={<UnitLabel tool={tool} withName />} title={tool.title} subtitle={tool.hook} />
+      <PageHeader
+        eyebrow={
+          <>
+            <ScopeLabel entry={entry} withName />
+            <span className="lab-frame__kind">
+              <Icon size={13} aria-hidden="true" /> {label}
+            </span>
+          </>
+        }
+        title={entry.title}
+        subtitle={entry.intro}
+      />
 
-      <div className="lab-tool" style={toolStyle(tool)}>
-        <Tool />
+      <div className="lab-tool">
+        <ToolBody key={entry.id} entry={entry} />
       </div>
 
-      <motion.section
-        className="lab-sources"
-        style={toolStyle(tool)}
-        aria-labelledby="lab-sources-title"
-        initial={{ opacity: 0, y: 14 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.45, ease: easeOut }}
-      >
-        <div className="lab-sources__head">
-          <span className="lab-sources__icon" aria-hidden="true">
+      {slide && (
+        <motion.aside
+          className="lab-notes"
+          style={unitVars(slide.unitId)}
+          aria-label="Read the notes"
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '0px 0px -40px 0px' }}
+          transition={{ duration: 0.45, ease: easeOut }}
+        >
+          <span className="lab-notes__icon" aria-hidden="true">
             <BookOpen size={18} />
           </span>
-          <div>
-            <h2 id="lab-sources-title" className="lab-sources__title">
-              Read the notes
-            </h2>
-            <p className="lab-sources__blurb">
-              {slides.length ? 'The sections this tool is built from.' : 'This tool draws on every unit.'}
-            </p>
+          <div className="lab-notes__text">
+            <div className="eyebrow">{getUnit(slide.unitId).short} · Notes</div>
+            <p className="lab-notes__title">{slide.title}</p>
           </div>
-        </div>
-        {slides.length > 0 ? (
-          <div className="lab-sources__chips">
-            {slides.map((s) => (
-              <Link key={s.id} to={`/learn/${s.id}`} className="chip lab-source-chip" style={unitVars(s.unitId)}>
-                <span className="lab-source-chip__dot" aria-hidden="true" />
-                {s.title}
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="lab-sources__chips">
-            <Link to="/learn" className="chip lab-source-chip">
-              Browse all the notes
-            </Link>
-          </div>
-        )}
-        {(slides[0] || unit) && (
-          <div className="lab-sources__actions">
-            {slides[0] && (
-              <Link to={`/tutor/${slides[0].id}`} className="btn btn-sm">
-                <MessageCircleQuestion size={16} aria-hidden="true" /> Ask the tutor
-              </Link>
-            )}
-            {unit && (
-              <Link to={`/quiz?units=${unit.id}&count=10&start=1`} className="btn btn-sm">
-                <GraduationCap size={16} aria-hidden="true" /> Quiz {unit.short}
-              </Link>
-            )}
-          </div>
-        )}
-      </motion.section>
+          <Link to={`/learn/${slide.id}`} className="btn btn-unit lab-notes__go">
+            Read the notes <ArrowRight size={16} aria-hidden="true" />
+          </Link>
+        </motion.aside>
+      )}
 
-      <nav className="lab-others" aria-label="Other Memory Lab tools">
-        <div className="eyebrow">More in the lab</div>
-        <ul className="lab-others__list">
-          {others.map((t) => {
-            const Icon = t.icon
-            return (
-              <li key={t.id}>
-                <Link to={`/lab/${t.id}`} className="lab-other" style={toolStyle(t)}>
-                  <span className="lab-other__icon" aria-hidden="true">
-                    <Icon size={16} />
-                  </span>
-                  {t.title}
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      </nav>
+      {(prev || next) && (
+        <nav className="lab-pager" aria-label="Other Memory Lab tools">
+          {prev ? (
+            <Link to={`/lab/${prev.id}`} className="lab-pager__link" style={toolStyle(prev)}>
+              <ArrowLeft size={18} aria-hidden="true" />
+              <span>
+                <span className="lab-pager__dir">Previous</span>
+                <span className="lab-pager__title">{prev.title}</span>
+              </span>
+            </Link>
+          ) : (
+            <span />
+          )}
+          {next && (
+            <Link to={`/lab/${next.id}`} className="lab-pager__link lab-pager__link--next" style={toolStyle(next)}>
+              <span>
+                <span className="lab-pager__dir">Next</span>
+                <span className="lab-pager__title">{next.title}</span>
+              </span>
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          )}
+        </nav>
+      )}
     </div>
   )
 }

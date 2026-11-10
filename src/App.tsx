@@ -3,7 +3,7 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import AppShell from './components/AppShell'
 import ErrorBoundary from './components/ErrorBoundary'
-import { SUBJECT } from './data'
+import { HAS_QUIZ, SUBJECT } from './data'
 import { easeOut } from './lib/motion'
 import HomePage from './pages/HomePage'
 
@@ -58,7 +58,7 @@ function AnimatedRoutes() {
             <Route path="/learn" element={<LearnPage />} />
             <Route path="/learn/:slideId" element={<LearnPage />} />
             <Route path="/flashcards" element={<FlashcardsPage />} />
-            <Route path="/quiz" element={<QuizPage />} />
+            <Route path="/quiz" element={HAS_QUIZ ? <QuizPage /> : <Navigate to="/" replace />} />
             <Route path="/cases" element={<CasesPage />} />
             <Route path="/lab" element={SUBJECT.hasLab ? <LabPage /> : <Navigate to="/" replace />} />
             <Route path="/lab/:toolId" element={SUBJECT.hasLab ? <LabPage /> : <Navigate to="/" replace />} />

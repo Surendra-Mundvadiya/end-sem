@@ -1,0 +1,376 @@
+/* Memory Lab formula calculator. Prefix: fx- */
+
+.fx {
+  --fx-c: var(--unit, var(--brand));
+  --fx-soft: var(--unit-soft, var(--brand-soft));
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  align-items: start;
+  gap: 18px;
+  min-width: 0;
+}
+
+.fx-card {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  padding: clamp(16px, 2.4vw, 24px);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.fx-card__head {
+  display: grid;
+  gap: 4px;
+}
+
+.fx-h {
+  font: 650 1.05rem/1.3 var(--font-ui);
+}
+
+.fx-sub {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+/* ---------- inputs ---------- */
+
+.fx-fields {
+  display: grid;
+  gap: 16px;
+}
+
+.fx-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fx-field__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.fx-field__label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+  color: var(--ink);
+  font: 600 0.95rem/1.35 var(--font-ui);
+}
+
+.fx-field__num {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.fx-number {
+  width: 8.5em;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 650 0.98rem/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  transition:
+    border-color var(--dur-2) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out);
+}
+
+.fx-number:focus {
+  outline: none;
+  border-color: var(--fx-c);
+  box-shadow: var(--ring);
+}
+
+.fx-unit {
+  color: var(--muted);
+  font: 600 0.85rem/1 var(--font-ui);
+  white-space: nowrap;
+}
+
+.fx-field__scale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--faint);
+  font: 600 0.72rem/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Slider: filled up to the value in the unit colour. */
+.fx-range {
+  --fx-pct: 50%;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fx-range:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.fx-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--fx-c) var(--fx-pct), var(--surface-3) var(--fx-pct));
+}
+
+.fx-range::-webkit-slider-thumb {
+  width: 22px;
+  height: 22px;
+  margin-top: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--fx-c);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  transition: transform var(--dur-1) var(--ease-out);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.fx-range:active::-webkit-slider-thumb {
+  transform: scale(1.14);
+}
+
+.fx-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--ring);
+}
+
+.fx-range::-moz-range-track {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+}
+
+.fx-range::-moz-range-progress {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--fx-c);
+}
+
+.fx-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--fx-c);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.fx-range:focus-visible::-moz-range-thumb {
+  box-shadow: var(--ring);
+}
+
+.fx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- variables in the working ---------- */
+
+.fx-var {
+  display: inline-block;
+  padding: 0.05em 0.4em;
+  border-radius: 6px;
+  background: var(--fx-soft);
+  color: color-mix(in srgb, var(--fx-c) 80%, var(--ink));
+  font: 700 0.92em/1.4 var(--font-mono);
+  font-style: normal;
+}
+
+.fx-var--sm {
+  font-size: 0.76rem;
+}
+
+.fx-val {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-op {
+  margin: 0 0.32em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.fx-op.is-unary {
+  margin: 0 0.05em 0 0;
+}
+
+.fx-op--lead {
+  margin-left: 0;
+}
+
+.fx-comma {
+  margin-right: 0.3em;
+}
+
+.fx-fn {
+  color: var(--ink-2);
+  font-style: italic;
+}
+
+/* ---------- result ---------- */
+
+.fx-out {
+  position: relative;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--fx-c) 24%, var(--border));
+  background:
+    radial-gradient(130% 90% at 100% 0%, var(--fx-soft), transparent 62%),
+    var(--surface);
+}
+
+.fx-result {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.fx-result__label {
+  color: var(--muted);
+  font: 700 0.75rem/1.2 var(--font-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fx-result__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.3em;
+  color: var(--ink);
+  font: 600 clamp(2.4rem, 1.8rem + 2.6vw, 3.4rem) / 1.05 var(--font-display);
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.fx-result__unit {
+  color: var(--muted);
+  font: 600 1.1rem/1 var(--font-ui);
+  letter-spacing: 0;
+}
+
+.fx-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--bad) 30%, transparent);
+  background: var(--bad-soft);
+  color: var(--bad);
+  font: 600 0.92rem/1.45 var(--font-ui);
+}
+
+.fx-error svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.fx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid color-mix(in srgb, var(--ok) 35%, transparent);
+  background: var(--ok-soft);
+  color: var(--ok);
+  font: 700 0.84rem/1 var(--font-ui);
+}
+
+.fx-working {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1px dashed color-mix(in srgb, var(--fx-c) 35%, var(--border));
+  background: var(--surface-2);
+  overflow-x: auto;
+}
+
+.fx-line {
+  color: var(--ink-2);
+  font: 1rem/1.7 var(--font-read);
+  overflow-wrap: anywhere;
+}
+
+.fx-line__lhs {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.fx-line--result strong {
+  color: var(--fx-c);
+  font: 700 1.08rem/1.5 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.fx-meaning {
+  display: grid;
+  gap: 4px;
+  color: var(--ink-2);
+  font: 1rem/1.62 var(--font-read);
+}
+
+.fx-meaning__label,
+.fx-example__label {
+  color: color-mix(in srgb, var(--fx-c) 75%, var(--ink));
+  font: 700 0.72rem/1.3 var(--font-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.fx-example {
+  display: grid;
+  gap: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  color: var(--ink-2);
+  font-size: 0.95rem;
+}
+
+.fx-example__label {
+  margin-right: 4px;
+}
+
+.fx-example__hint,
+.fx-example__note {
+  color: var(--muted);
+}
+
+@media print {
+  .fx-range,
+  .fx-actions,
+  .fx-field__scale {
+    display: none;
+  }
+
+  .fx-card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}

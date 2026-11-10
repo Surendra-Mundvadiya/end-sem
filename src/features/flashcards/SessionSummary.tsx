@@ -3,7 +3,7 @@ import { Check, Clock, RotateCcw, Shuffle, Sparkles, Sprout, Target, Trophy } fr
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import ProgressRing from '../../components/ProgressRing'
-import { unitVars, type Card } from '../../data'
+import { HAS_QUIZ, unitVars, type Card } from '../../data'
 import { bouncy, fadeUp, stagger } from '../../lib/motion'
 import { plural } from '../../lib/text'
 import Count from './Count'
@@ -119,10 +119,10 @@ export default function SessionSummary({ total, knew, again, missed, mode, dueNo
           <Shuffle size={18} aria-hidden />
           Study again
         </button>
-        <Link className="btn btn-ghost btn-lg" to={quizHref}>
+        {HAS_QUIZ && <Link className="btn btn-ghost btn-lg" to={quizHref}>
           <Target size={18} aria-hidden />
           Quiz me
-        </Link>
+        </Link>}
       </div>
 
       {mode === 'due' && (

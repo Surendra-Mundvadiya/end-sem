@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, BookOpen, FileText, Flame, FlaskConical, Headphones, Layers, Library, ListChecks, Scale, Sparkles, Target, Zap, type LucideIcon } from 'lucide-react'
 import ProgressRing from '../components/ProgressRing'
 import UnitPill from '../components/UnitPill'
-import { CARDS, CASES, MATERIALS, QUIZ, SLIDES, SUBJECT, SUBJECTS, UNITS, getUnit, partsOfUnit, slideById, slidesOfUnit, unitVars } from '../data'
+import { CARDS, CASES, HAS_QUIZ, MATERIALS, QUIZ, SLIDES, SUBJECT, SUBJECTS, UNITS, getUnit, partsOfUnit, slideById, slidesOfUnit, unitVars } from '../data'
 import { easeOut, fadeUp, stagger } from '../lib/motion'
 import { studyStreak, unitStats, useProgress } from '../lib/progress'
 import { switchSubject } from '../subjects/registry'
@@ -30,10 +30,10 @@ function greeting(): string {
 
 const TOOLS: { to: string; title: string; hook: string; icon: LucideIcon }[] = [
   { to: '/tutor', title: 'Spoken tutor', hook: 'Lessons read aloud, line by line, with quick checks.', icon: Headphones },
-  { to: '/lab', title: 'Memory Lab', hook: 'Calculators, decision trees, timelines and mnemonics.', icon: FlaskConical },
+  { to: '/lab', title: 'Memory Lab', hook: 'Course map, order game, comparisons, calculators and decision trees.', icon: FlaskConical },
   { to: '/cases', title: 'Concept match', hook: 'Link each case to the principle it stands for.', icon: Scale },
   { to: '/revise', title: 'Rapid revision', hook: 'One page per unit for the night before.', icon: Zap },
-  { to: '/reference', title: 'Reference', hook: 'Key figures, the section finder and the PDFs.', icon: Library },
+  { to: '/reference', title: 'Reference', hook: 'The glossary, key facts and source material.', icon: Library },
 ].filter((t) => (t.to === '/lab' ? SUBJECT.hasLab : t.to === '/cases' ? CASES.length > 0 : true))
 
 const CONTENTS = [
@@ -80,9 +80,11 @@ export default function HomePage() {
             <Link className="btn btn-primary btn-lg" to={`/learn/${resume.id}`}>
               <BookOpen size={18} aria-hidden="true" /> {last ? 'Continue reading' : 'Start reading'}
             </Link>
-            <Link className="btn btn-lg" to="/quiz?count=10&start=1">
-              <ListChecks size={18} aria-hidden="true" /> Quick quiz
-            </Link>
+            {HAS_QUIZ && (
+              <Link className="btn btn-lg" to="/quiz?count=10&start=1">
+                <ListChecks size={18} aria-hidden="true" /> Quick quiz
+              </Link>
+            )}
             <Link className="btn btn-lg btn-ghost" to={`/tutor/${resume.id}`}>
               <Headphones size={18} aria-hidden="true" /> Listen
             </Link>
@@ -151,12 +153,12 @@ export default function HomePage() {
               {weakest.unit.short}: {weakest.unit.name}
             </h2>
             <p>
-              Your weakest unit so far, at {Math.round(weakest.s.mastery * 100)}% mastery. A short quiz shows you which gaps to fill.
+              Your weakest unit so far, at {Math.round(weakest.s.mastery * 100)}% mastery. {HAS_QUIZ ? 'A short quiz shows you which gaps to fill.' : 'A round of flashcards shows you which gaps to fill.'}
             </p>
           </div>
           <div className="home-focus__actions">
-            <Link className="btn btn-unit" to={`/quiz?units=${weakest.unit.id}&count=10&start=1`}>
-              Quiz this unit <ArrowRight size={16} aria-hidden="true" />
+            <Link className="btn btn-unit" to={HAS_QUIZ ? `/quiz?units=${weakest.unit.id}&count=10&start=1` : `/flashcards?unit=${weakest.unit.id}`}>
+              {HAS_QUIZ ? 'Quiz this unit' : 'Flashcards for this unit'} <ArrowRight size={16} aria-hidden="true" />
             </Link>
             <Link className="btn" to={`/revise/${weakest.unit.id}`}>
               Rapid revision
@@ -216,9 +218,11 @@ export default function HomePage() {
                   <Link className="btn btn-sm" to={`/tutor/${next.id}`}>
                     <Headphones size={14} aria-hidden="true" /> Listen
                   </Link>
-                  <Link className="btn btn-sm" to={`/quiz?units=${u.id}&count=10&start=1`}>
-                    <ListChecks size={14} aria-hidden="true" /> Quiz
-                  </Link>
+                  {HAS_QUIZ && (
+                    <Link className="btn btn-sm" to={`/quiz?units=${u.id}&count=10&start=1`}>
+                      <ListChecks size={14} aria-hidden="true" /> Quiz
+                    </Link>
+                  )}
                   <Link className="btn btn-sm" to={`/flashcards?unit=${u.id}`}>
                     <Layers size={14} aria-hidden="true" /> Cards
                   </Link>
@@ -280,6 +284,7 @@ export default function HomePage() {
         </section>
       )}
 
+      {MATERIALS.length > 0 && (
       <section className="home-section">
         <div className="home-section__head">
           <h2>Source material</h2>
@@ -298,6 +303,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+      )}
 
       <p className="home-tip">
         Tip: press <span className="kbd">Ctrl</span> <span className="kbd">K</span> or <span className="kbd">/</span> to search every note, case and key figure.

@@ -4,7 +4,7 @@ import { AnimatePresence, animate, motion, useMotionValue, useSpring, useTransfo
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import confetti from 'canvas-confetti'
 import { AArrowDown, AArrowUp, ArrowLeft, ArrowRight, Bookmark, Brain, ListTree, PartyPopper, X } from 'lucide-react'
-import { getUnit, slideById, slidesOfUnit, unitVars, type Slide, type UnitId } from '../../data'
+import { HAS_QUIZ, SLIDES, getUnit, slideById, slidesOfUnit, unitVars, type Slide, type UnitId } from '../../data'
 import { setLastSlide, setUnderstood, toggleBookmark, useProgress } from '../../lib/progress'
 import { bouncy, easeOut, spring } from '../../lib/motion'
 import UnitPill from '../../components/UnitPill'
@@ -40,7 +40,7 @@ export default function LearnPage() {
   const progress = useProgress()
   const slide = slideById(slideId)
   if (!slide) {
-    const fallback = slideById(progress.lastSlide)?.id ?? 's0'
+    const fallback = slideById(progress.lastSlide)?.id ?? SLIDES[0].id
     return <Navigate to={`/learn/${fallback}`} replace />
   }
   return <Reader slide={slide} />
@@ -448,9 +448,11 @@ function UnitToast({ toast, onClose }: { toast: { id: number; unitId: UnitId } |
               <strong>{unit.short} complete</strong>
               <span>Every section is marked as understood.</span>
             </span>
-            <Link className="btn btn-sm btn-unit" to={`/quiz?units=${unit.id}&count=10&start=1`} onClick={onClose}>
-              Quiz yourself
-            </Link>
+            {HAS_QUIZ && (
+              <Link className="btn btn-sm btn-unit" to={`/quiz?units=${unit.id}&count=10&start=1`} onClick={onClose}>
+                Quiz yourself
+              </Link>
+            )}
             <button type="button" className="btn btn-icon btn-sm btn-ghost" onClick={onClose} aria-label="Dismiss">
               <X size={16} />
             </button>

@@ -118,6 +118,19 @@ type Rule = [RegExp, string | ((...m: string[]) => string)]
 
 const RULES: Rule[] = [
   [/&/g, ' and '],
+  // Maths symbols, wherever they appear (formulas, worked examples, tables).
+  [/\s*÷\s*/g, ' divided by '],
+  [/\s*[×✕]\s*/g, ' times '],
+  [/\s*=\s*/g, ' equals '],
+  [/\s*\^\s*/g, ' to the power of '],
+  [/\s*−\s*/g, ' minus '],
+  [/\s*≈\s*/g, ' is approximately '],
+  [/\s*≠\s*/g, ' is not equal to '],
+  [/\s*≥\s*/g, ' is at least '],
+  [/\s*≤\s*/g, ' is at most '],
+  [/(\d)\s*\+\s*(?=[\d(₹])/g, '$1 plus '],
+  // Caveat markers stay on screen; the callout that explains them is read aloud.
+  [/[†‡]/g, ''],
   [/\s+vs?\.\s+/g, ' versus '],
   [/\bSl\.\s*No\.\s*/g, 'serial number '],
   [/\bNos\.\s*(?=\d)/g, 'numbers '],
@@ -171,6 +184,40 @@ export function speechify(display: string): string {
   let s = stripCitations(display)
   for (const [re, rep] of RULES) s = s.replace(re, rep as never)
   return tidy(s)
+}
+
+/**
+ * An equation line (p.eq), read naturally: "VA/HC + (VA − HC)/VA" -> "VA divided by HC plus (VA minus HC)
+ * divided by VA". Operators that are ambiguous in prose ("/", "-", "+", "*", a bare "%") are only
+ * rewritten here; speechify handles ÷ × = ^ ₹ and the rest.
+ */
+export function speakEquation(display: string): string {
+  const s = display
+    .replace(/\s*\/\s*/g, ' divided by ')
+    .replace(/\s+[-–]\s+/g, ' minus ')
+    // "VA-HC", "(P-T)": a hyphen between capitals, digits or brackets is a minus sign ("pre-tax" is not).
+    .replace(/([A-Z0-9)\]])-(?=[A-Z0-9([])/g, '$1 minus ')
+    .replace(/\s*\+\s*/g, ' plus ')
+    .replace(/\s*\*\s*/g, ' times ')
+    .replace(/√\s*/g, 'the square root of ')
+    .replace(/Σ\s*/g, 'the sum of ')
+    .replace(/Δ\s*/g, 'the change in ')
+  const said = speechify(s)
+    .replace(/\s*%/g, ' percent')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+  // End on a full stop, so the voice pauses before the explanation.
+  return said && !/[.!?]$/.test(said) ? `${said}.` : said
+}
+
+/** "What changes" -> "what changes", for a column heading read mid-sentence. Acronyms ("IP move") stay. */
+export function lowerFirst(s: string): string {
+  return /^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s
+}
+
+/** Drops trailing punctuation so a joining word or mark can follow: "Facts:" -> "Facts". */
+export function trimEndPunct(s: string): string {
+  return s.replace(/[\s.,;:–—-]+$/, '')
 }
 
 /* ---------- sentences ---------- */

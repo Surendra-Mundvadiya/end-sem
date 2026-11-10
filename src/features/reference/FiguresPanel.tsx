@@ -34,7 +34,7 @@ export default function FiguresPanel({ initialQuery = '' }: { initialQuery?: str
   return (
     <div className="ref-panel-body">
       <div className="ref-toolbar">
-        <SearchBox value={q} onChange={setQ} label="Search key figures" placeholder="Search a topic, an amount or a rate" />
+        <SearchBox value={q} onChange={setQ} label="Search key facts" placeholder="Search a topic, a number or a provision" />
         {suggestions.length > 0 && (
           <div className="ref-suggest" role="group" aria-label="Quick filters">
             {suggestions.map((s) => (
@@ -49,7 +49,7 @@ export default function FiguresPanel({ initialQuery = '' }: { initialQuery?: str
             ? `${plural(tiles.length, 'topic')} and ${plural(cardCount, 'card')} match`
             : [
                 allTiles.length ? `${plural(allTiles.length, 'topic')} at a glance` : '',
-                allGroups.length ? `${plural(allGroups.reduce((n, g) => n + g.cards.length, 0), 'figure card')} by unit` : '',
+                allGroups.length ? `${plural(allGroups.reduce((n, g) => n + g.cards.length, 0), 'fact card')} by unit` : '',
               ]
                 .filter(Boolean)
                 .join(' · ')}
@@ -75,7 +75,7 @@ export default function FiguresPanel({ initialQuery = '' }: { initialQuery?: str
           <header className="ref-block__head">
             <span className="eyebrow">At a glance</span>
             <h2 id="ref-fig-sheet" className="ref-block__title">
-              Key figures and thresholds
+              Key facts
             </h2>
           </header>
           <ul className="ref-sheet" role="list">
@@ -102,9 +102,9 @@ export default function FiguresPanel({ initialQuery = '' }: { initialQuery?: str
       {groups.length > 0 && (
         <section className="ref-block" aria-labelledby="ref-fig-units">
           <header className="ref-block__head">
-            <span className="eyebrow">Flashcard figures</span>
+            <span className="eyebrow">From your flashcards</span>
             <h2 id="ref-fig-units" className="ref-block__title">
-              Figures by unit
+              Key facts by unit
             </h2>
           </header>
           <div className="ref-units">
@@ -112,7 +112,7 @@ export default function FiguresPanel({ initialQuery = '' }: { initialQuery?: str
               {groups.map((g, gi) => {
                 const unit = getUnit(g.unitId)
                 return (
-                  <motion.section key={g.unitId} layout="position" className="ref-unit" style={unitVars(g.unitId)} {...item(gi)} aria-label={`${unit.short} figures`}>
+                  <motion.section key={g.unitId} layout="position" className="ref-unit" style={unitVars(g.unitId)} {...item(gi)} aria-label={`${unit.short} key facts`}>
                     <header className="ref-unit__head">
                       <UnitPill unitId={g.unitId} />
                       <h3 className="ref-unit__name">{unit.name}</h3>

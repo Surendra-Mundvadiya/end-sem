@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Layers, RotateCcw, Shuffle, Target, Zap } from 'lucide-react'
-import { CARDS, QUIZ, UNITS, getUnit, slidesOfUnit, unitVars, type Slide } from '../../data'
+import { CARDS, HAS_QUIZ, QUIZ, UNITS, getUnit, slidesOfUnit, unitVars, type Slide } from '../../data'
 import { useProgress } from '../../lib/progress'
 import { fadeUp, stagger } from '../../lib/motion'
 import ProgressRing from '../../components/ProgressRing'
@@ -50,6 +50,7 @@ export default function EndOfUnit({ slide }: { slide: Slide }) {
       </motion.div>
 
       <motion.div className="lrn-end-actions" variants={fadeUp}>
+        {HAS_QUIZ && (
         <Link className="lrn-end-cta lrn-end-cta--primary" to={`/quiz?units=${unit.id}&count=10&start=1`}>
           <span className="lrn-end-cta-icon">
             <Target size={20} />
@@ -60,6 +61,7 @@ export default function EndOfUnit({ slide }: { slide: Slide }) {
           </span>
           <ArrowRight size={18} className="lrn-end-cta-arrow" aria-hidden="true" />
         </Link>
+        )}
         <Link className="lrn-end-cta" to={`/flashcards?unit=${unit.id}`}>
           <span className="lrn-end-cta-icon">
             <Layers size={18} />
@@ -105,10 +107,10 @@ export default function EndOfUnit({ slide }: { slide: Slide }) {
             </span>
           </Link>
         ) : (
-          <Link className="lrn-end-next" to={`/quiz?units=${UNITS.map((u) => u.id).join(',')}&count=20&start=1`}>
+          <Link className="lrn-end-next" to={HAS_QUIZ ? `/quiz?units=${UNITS.map((u) => u.id).join(',')}&count=20&start=1` : '/flashcards'}>
             <span className="lrn-end-next-text">
               <span className="eyebrow">You have reached the end of the notes</span>
-              <span className="lrn-end-next-title">Mixed quiz: 20 questions from every unit</span>
+              <span className="lrn-end-next-title">{HAS_QUIZ ? 'Mixed quiz: 20 questions from every unit' : 'Mixed flashcards from every unit'}</span>
             </span>
             <span className="lrn-end-next-go" aria-hidden="true">
               <Shuffle size={18} />

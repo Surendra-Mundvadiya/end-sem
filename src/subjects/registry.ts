@@ -28,16 +28,13 @@ export interface SubjectMeta {
 
 export const SUBJECTS: SubjectMeta[] = [
   {
-    id: 'tax',
-    title: 'Taxation Law',
-    subtitle: 'Income Tax Act, 2025',
-    description: 'Taxation and the Constitution, then the Income Tax Act, 2025: basic concepts, salaries, house property and business income.',
+    id: 'ipr',
+    title: 'IPR Management',
+    subtitle: 'Intellectual Property Rights Management',
+    description: 'Measuring and extracting value, portfolio management, and innovation and IP protection.',
     hasLab: true,
-    materials: [
-      { id: 'notes', title: 'Study material', subtitle: 'The full notes as a PDF', path: 'tax/Taxation_Law_Study_Material.pdf' },
-      { id: 'act', title: 'The Income Tax Act, 2025', subtitle: 'Bare act (PDF)', path: 'tax/The Income Tax Act, 2025.pdf' },
-    ],
-    load: () => import('./tax/content.json').then((m) => m.default),
+    materials: [],
+    load: () => import('./ipr/content.json').then((m) => m.default),
   },
 ]
 

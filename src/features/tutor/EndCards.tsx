@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, BookOpen, CircleCheck, ListChecks, RotateCcw } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { getUnit, type Slide } from '../../data'
+import { HAS_QUIZ, getUnit, type Slide } from '../../data'
 import { softSpring } from '../../lib/motion'
 
 const cardMotion = {
@@ -75,9 +75,11 @@ export function LessonEnd({ slide, next, topicTitle, quizResult, onReplay, onNex
         <Link className="btn btn-ghost" to={`/learn/${slide.id}`}>
           <BookOpen size={16} /> Open in notes
         </Link>
-        <Link className="btn btn-ghost" to={`/quiz?units=${slide.unitId}&count=10&start=1`}>
-          <ListChecks size={16} /> Practise {unit.short}
-        </Link>
+        {HAS_QUIZ && (
+          <Link className="btn btn-ghost" to={`/quiz?units=${slide.unitId}&count=10&start=1`}>
+            <ListChecks size={16} /> Practise {unit.short}
+          </Link>
+        )}
       </div>
     </motion.div>
   )

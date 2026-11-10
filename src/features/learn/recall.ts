@@ -9,8 +9,9 @@
 
 /** Clause labels such as "(a)", "(ii)" or "(12)" carry nothing to remember. */
 const CLAUSE_LABEL = /^\((?:[a-z]{1,2}|[ivx]+|\d+)\)$/i
-/** Structural labels used in the notes ("Exam focus." in s14/s43/s95, "Illustration." in s96). */
-const PLAIN_LABEL = /^(?:exam focus|illustration)\.?$/i
+/** Structural block labels written in <strong> ("Exam focus.", "Law update.", "Remember:" …) stay visible. */
+const PLAIN_LABEL =
+  /^(?:exam focus|exam tip|illustration|law update|current law update|update|remember|memory hook|worked example|example|key point|note|caution)\s*[.:]?$/i
 
 /**
  * Numbers worth memorising: amounts ("Rs. 7,50,000", "Rs. 10 crore"), percentages ("50%"),
@@ -18,7 +19,7 @@ const PLAIN_LABEL = /^(?:exam focus|illustration)\.?$/i
  * Groups: 1 amount, 2 percentage, 3 reference prefix (kept visible), 4 reference number (hidden).
  */
 const NUMBER_RE =
-  /(Rs\.\s?\d+(?:,\d+)*(?:\.\d+)?(?:\s(?:lakh|crore))?)|(\b\d+(?:\.\d+)?\s?%)|(\b(?:[Ss]ections?|Articles?|Schedules?|Chapters?)\s)(\d+[A-Z]*(?:\([0-9A-Za-z]+\))*(?:\s(?:to|and)\s\d+[A-Z]*(?:\([0-9A-Za-z]+\))*)?|[IVXL]+\b(?:\s(?:to|and)\s[IVXL]+\b)?)/g
+  /((?:Rs\.\s?|₹\s?)\d+(?:,\d+)*(?:\.\d+)?(?:\s(?:lakh|crore))?)|(\b\d+(?:\.\d+)?\s?%)|(\b(?:[Ss]ections?|Articles?|Schedules?|Chapters?)\s)(\d+[A-Z]*(?:\([0-9A-Za-z]+\))*(?:\s(?:to|and)\s\d+[A-Z]*(?:\([0-9A-Za-z]+\))*)?|[IVXL]+\b(?:\s(?:to|and)\s[IVXL]+\b)?)/g
 
 const EYE_SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></svg>'
