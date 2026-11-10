@@ -1,91 +1,63 @@
-import { Suspense, lazy, useEffect } from 'react'
-import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
-import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import AppShell from './components/AppShell'
-import ErrorBoundary from './components/ErrorBoundary'
-import { HAS_QUIZ, SUBJECT } from './data'
-import { easeOut } from './lib/motion'
-import HomePage from './pages/HomePage'
+import { useEffect } from 'react'
+import { HashRouter, Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { SUBJECTS } from './subjects'
+import Contents from './pages/Contents'
+import Home from './pages/Home'
+import Quiz from './pages/Quiz'
+import TopicPage from './pages/Topic'
 
-// Each section is its own chunk; Home and the shell load first.
-const sections = {
-  learn: () => import('./features/learn/LearnPage'),
-  flashcards: () => import('./features/flashcards/FlashcardsPage'),
-  quiz: () => import('./features/quiz/QuizPage'),
-  cases: () => import('./features/cases/CasesPage'),
-  lab: () => import('./features/lab/LabPage'),
-  revise: () => import('./features/revise/RevisePage'),
-  tutor: () => import('./features/tutor/TutorPage'),
-  reference: () => import('./features/reference/ReferencePage'),
-}
-
-const LearnPage = lazy(sections.learn)
-const FlashcardsPage = lazy(sections.flashcards)
-const QuizPage = lazy(sections.quiz)
-const CasesPage = lazy(sections.cases)
-const LabPage = lazy(sections.lab)
-const RevisePage = lazy(sections.revise)
-const TutorPage = lazy(sections.tutor)
-const ReferencePage = lazy(sections.reference)
-
-/** Fetch the other sections in the background once the first screen is up, so navigation stays instant. */
-function usePrefetchSections() {
-  useEffect(() => {
-    const run = () => Object.values(sections).forEach((load) => void load().catch(() => {}))
-    const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback
-    if (idle) idle(run)
-    else window.setTimeout(run, 1500)
-  }, [])
-}
-
-function AnimatedRoutes() {
-  const location = useLocation()
-  // Animate between sections only; moving within a section (e.g. slide to slide) is animated by the feature itself.
-  const section = location.pathname.split('/')[1] || 'home'
+function Header() {
+  const { pathname } = useLocation()
+  const id = pathname.split('/')[1]
+  const subject = SUBJECTS.find((s) => s.id === id)
   return (
-    <AnimatePresence mode="wait" initial={false} onExitComplete={() => window.scrollTo({ top: 0 })}>
-      <motion.div
-        key={section}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.26, ease: easeOut }}
-      >
-        <ErrorBoundary>
-        <Suspense fallback={<div className="route-loading" aria-label="Loading" />}>
-          <Routes location={location}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/learn" element={<LearnPage />} />
-            <Route path="/learn/:slideId" element={<LearnPage />} />
-            <Route path="/flashcards" element={<FlashcardsPage />} />
-            <Route path="/quiz" element={HAS_QUIZ ? <QuizPage /> : <Navigate to="/" replace />} />
-            <Route path="/cases" element={<CasesPage />} />
-            <Route path="/lab" element={SUBJECT.hasLab ? <LabPage /> : <Navigate to="/" replace />} />
-            <Route path="/lab/:toolId" element={SUBJECT.hasLab ? <LabPage /> : <Navigate to="/" replace />} />
-            <Route path="/revise" element={<RevisePage />} />
-            <Route path="/revise/:unitId" element={<RevisePage />} />
-            <Route path="/tutor" element={<TutorPage />} />
-            <Route path="/tutor/:slideId" element={<TutorPage />} />
-            <Route path="/reference" element={<ReferencePage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-        </ErrorBoundary>
-      </motion.div>
-    </AnimatePresence>
+    <header className="site-header">
+      <div className="wrap header-row">
+        <Link to="/" className="site-name">
+          Study Notes
+        </Link>
+        {subject && (
+          <nav className="subject-nav" aria-label={subject.title}>
+            <span className="subject-name">{subject.title}</span>
+            <NavLink to={`/${subject.id}`} end>
+              Notes
+            </NavLink>
+            {subject.hasQuiz && <NavLink to={`/${subject.id}/quiz`}>Quiz</NavLink>}
+          </nav>
+        )}
+      </div>
+    </header>
   )
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => window.scrollTo(0, 0), [pathname])
+  return null
+}
+
+function SubjectRoute({ page }: { page: 'contents' | 'quiz' }) {
+  const { subject } = useParams()
+  const meta = SUBJECTS.find((s) => s.id === subject)
+  if (!meta) return <Navigate to="/" replace />
+  if (page === 'quiz' && !meta.hasQuiz) return <Navigate to={`/${meta.id}`} replace />
+  return page === 'contents' ? <Contents /> : <Quiz />
+}
+
 export default function App() {
-  usePrefetchSections()
   return (
-    <MotionConfig reducedMotion="user">
-      {/* Every route lives under its subject: #/tax/learn/s7 */}
-      <HashRouter basename={`/${SUBJECT.id}`}>
-        <AppShell>
-          <AnimatedRoutes />
-        </AppShell>
-      </HashRouter>
-    </MotionConfig>
+    <HashRouter>
+      <ScrollToTop />
+      <Header />
+      <main className="wrap">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/:subject" element={<SubjectRoute page="contents" />} />
+          <Route path="/:subject/notes/:topic" element={<TopicPage />} />
+          <Route path="/:subject/quiz" element={<SubjectRoute page="quiz" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </HashRouter>
   )
 }
