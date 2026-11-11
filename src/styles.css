@@ -254,6 +254,41 @@ h2 {
   margin: 0 0 0.3em;
 }
 
+/* Figures drawn as boxes: nested circles (source, GI, appellation) and the chip's layers. */
+.notes .nest,
+.notes .layers {
+  margin: 0 0 1em;
+  padding: 10px 14px;
+  border: 1px solid var(--ink);
+}
+
+.notes .nest .nest {
+  margin: 10px 0 0;
+}
+
+.notes .nest p,
+.notes .layers p {
+  margin: 0 0 0.3em;
+}
+
+.notes .nest-t {
+  font-family: var(--sans);
+  font-weight: 700;
+}
+
+.notes ol.stack {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+
+.notes ol.stack li {
+  margin: 0 0 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--ink);
+  font-family: var(--sans);
+}
+
 .pager {
   display: flex;
   justify-content: space-between;

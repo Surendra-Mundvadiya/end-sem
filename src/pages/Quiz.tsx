@@ -75,11 +75,13 @@ export default function Quiz() {
             Unit{' '}
             <select value={unit} onChange={(e) => setUnit(e.target.value)}>
               <option value="all">All units ({content.quiz.length})</option>
-              {content.units.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.short}: {u.name} ({content.quiz.filter((q) => q.u === u.id).length})
-                </option>
-              ))}
+              {content.units
+                .filter((u) => content.quiz.some((q) => q.u === u.id))
+                .map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.short}: {u.name} ({content.quiz.filter((q) => q.u === u.id).length})
+                  </option>
+                ))}
             </select>
           </label>
           <label>

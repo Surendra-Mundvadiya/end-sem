@@ -49,7 +49,7 @@ export interface Subject {
   id: string
   title: string
   description: string
-  /** IPR Management and IT Law have quiz questions; LRLS is notes only. */
+  /** IT Law and Other Forms of IPR have quiz questions; the others are notes only. */
   hasQuiz: boolean
   load: () => Promise<Content>
 }
@@ -59,7 +59,7 @@ export const SUBJECTS: Subject[] = [
     id: 'ipr',
     title: 'IPR Management',
     description: 'Measuring and extracting value, portfolio management, and innovation and IP protection.',
-    hasQuiz: true,
+    hasQuiz: false,
     load: () => import('./content/ipr.json').then((m) => m.default as unknown as Content),
   },
   {
@@ -75,6 +75,13 @@ export const SUBJECTS: Subject[] = [
     description: 'Plant varieties and biodiversity law, biopiracy and DSI, genus and species patents, geographical indications, and layout designs.',
     hasQuiz: false,
     load: () => import('./content/lrls.json').then((m) => m.default as unknown as Content),
+  },
+  {
+    id: 'ofip',
+    title: 'Other Forms of IPR',
+    description: 'Geographical indications, and semiconductor integrated circuit layout designs. The quiz covers geographical indications only.',
+    hasQuiz: true,
+    load: () => import('./content/ofip.json').then((m) => m.default as unknown as Content),
   },
 ]
 
